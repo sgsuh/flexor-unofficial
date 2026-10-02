@@ -1,0 +1,31 @@
+# ResNet-20 layer-group mixed precision, paper Table 2 (best row):
+# N_in = 19 / 16 / 7 (N_out = 20) for the three stages -> ~0.47 bit/weight.
+data:
+  name: cifar10
+  batch_size: 128
+model:
+  name: resnet20
+flexor:
+  n_in: 12
+  n_out: 20
+  q: 1
+  n_tap: 2
+  alpha_init: 0.2
+  stages:
+    - {n_in: 19}
+    - {n_in: 16}
+    - {n_in: 7}
+optim:
+  name: sgd
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 1.0e-5
+schedule:
+  epochs: 500
+  warmup_epochs: 100
+  milestones: [350, 400, 450]
+  gamma: 0.5
+s_tanh:
+  base: 10.0
+  warmup_start: 5.0
+  factor: 2.0

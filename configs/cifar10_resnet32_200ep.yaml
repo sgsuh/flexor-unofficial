@@ -1,0 +1,27 @@
+# ResNet-32 on CIFAR-10, paper Fig. 5/6 recipe (Sec. 4):
+# no warmup, LR 0.1 x0.5 at 150/175, 200 epochs, S_tanh x2 at each LR decay.
+# Fig. 5/6 use N_in=8, N_out=10, q=1 (0.8 bit/weight).
+data:
+  name: cifar10
+  batch_size: 128
+model:
+  name: resnet32
+flexor:
+  n_in: 8
+  n_out: 10
+  q: 1
+  n_tap: 2
+  alpha_init: 0.2
+optim:
+  name: sgd
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 1.0e-5
+schedule:
+  epochs: 200
+  warmup_epochs: 0
+  milestones: [150, 175]
+  gamma: 0.5
+s_tanh:
+  base: 10.0
+  factor: 2.0

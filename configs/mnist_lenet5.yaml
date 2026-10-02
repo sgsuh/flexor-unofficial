@@ -1,0 +1,23 @@
+# LeNet-5 on MNIST (paper Sec. 3, Fig. 4 / Fig. 12).
+# Fig. 4 uses a randomly filled M: --set flexor.n_tap=null
+data:
+  name: mnist
+  batch_size: 50
+model:
+  name: lenet5
+flexor:
+  n_in: 8
+  n_out: 20
+  n_tap: 2
+  alpha_init: kaiming   # deviation: paper uses 0.2 (see README)
+optim:
+  name: adam
+  lr: 1.0e-4
+  weight_decay: 0.0
+schedule:
+  epochs: 20
+  warmup_epochs: 0
+  milestones: []
+s_tanh:
+  base: 100.0
+  factor: 1.0
