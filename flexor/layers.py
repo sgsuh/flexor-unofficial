@@ -1,7 +1,7 @@
 """FleXOR layers: encrypted weights -> XOR decryption -> binary codes -> scaled weights."""
 
 import math
-from typing import Iterator, Sequence
+from typing import Iterator, Sequence, Union
 
 import torch
 import torch.nn as nn
@@ -19,6 +19,10 @@ class FleXORWeight(nn.Module):
     binary code ``b_i`` is produced by decrypting the slices of ``w_e[i]``
     with the i-th XOR matrix. ``alpha`` holds one scaling factor per output
     channel (``shape[0]``) and bit plane.
+
+    ``alpha_init`` is either a constant (paper: 0.2) or ``"kaiming"``, which
+    uses sqrt(2 / fan_in) so the layer output keeps unit scale. The constant
+    works when BatchNorm follows; without it (e.g. LeNet-5) activations blow up.
     """
 
     def __init__(
@@ -26,7 +30,7 @@ class FleXORWeight(nn.Module):
         shape: Sequence[int],
         spec: XORSpec,
         init_std: float = 1e-3,
-        alpha_init: float = 0.2,
+        alpha_init: Union[float, str] = 0.2,
         s_tanh: float = 10.0,
     ):
         super().__init__()
@@ -37,7 +41,11 @@ class FleXORWeight(nn.Module):
         self.n_slices = math.ceil(self.numel / spec.n_out)
 
         self.w_e = nn.Parameter(torch.randn(spec.q, self.n_slices, spec.n_in) * init_std)
-        self.alpha = nn.Parameter(torch.full((spec.q, self.shape[0]), alpha_init))
+        if alpha_init == "kaiming":
+            alpha_init = math.sqrt(2.0 / (self.numel // self.shape[0]))
+        elif isinstance(alpha_init, str):
+            raise ValueError(f"unknown alpha_init: {alpha_init}")
+        self.alpha = nn.Parameter(torch.full((spec.q, self.shape[0]), float(alpha_init)))
 
         matrices = spec.matrices()
         max_tap = max(int(m.sum(dim=1).max()) for m in matrices)

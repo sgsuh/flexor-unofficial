@@ -70,3 +70,10 @@ def test_s_tanh_schedule():
     assert sched.value(180) == pytest.approx(40.0)
     no_warmup = STanhSchedule(base=100.0, factor=1.0, milestones=[10])
     assert no_warmup.value(0) == no_warmup.value(50) == 100.0
+
+
+def test_kaiming_alpha_init():
+    fw = FleXORWeight((16, 8, 3, 3), XORSpec(n_in=8, n_out=20), alpha_init="kaiming")
+    assert torch.allclose(fw.alpha, torch.full_like(fw.alpha, (2.0 / 72) ** 0.5))
+    with pytest.raises(ValueError):
+        FleXORWeight((4, 4), XORSpec(n_in=2, n_out=4), alpha_init="xavier")
