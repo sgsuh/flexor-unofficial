@@ -1,0 +1,30 @@
+# Phase 4-1: LeNet-5 on MNIST (paper Fig. 4 / Fig. 12).
+# N_out in {10, 20} x {0.4, 0.6, 0.8} bit x {n_tap=2, random-filled M}, plus an FP baseline.
+config: configs/mnist_lenet5.yaml
+runs:
+  - name: mnist_nout10_nin4_tap2
+    set: [flexor.n_out=10, flexor.n_in=4, flexor.n_tap=2]
+  - name: mnist_nout10_nin4_rand
+    set: [flexor.n_out=10, flexor.n_in=4, flexor.n_tap=null]
+  - name: mnist_nout10_nin6_tap2
+    set: [flexor.n_out=10, flexor.n_in=6, flexor.n_tap=2]
+  - name: mnist_nout10_nin6_rand
+    set: [flexor.n_out=10, flexor.n_in=6, flexor.n_tap=null]
+  - name: mnist_nout10_nin8_tap2
+    set: [flexor.n_out=10, flexor.n_in=8, flexor.n_tap=2]
+  - name: mnist_nout10_nin8_rand
+    set: [flexor.n_out=10, flexor.n_in=8, flexor.n_tap=null]
+  - name: mnist_nout20_nin8_tap2
+    set: [flexor.n_out=20, flexor.n_in=8, flexor.n_tap=2]
+  - name: mnist_nout20_nin8_rand
+    set: [flexor.n_out=20, flexor.n_in=8, flexor.n_tap=null]
+  - name: mnist_nout20_nin12_tap2
+    set: [flexor.n_out=20, flexor.n_in=12, flexor.n_tap=2]
+  - name: mnist_nout20_nin12_rand
+    set: [flexor.n_out=20, flexor.n_in=12, flexor.n_tap=null]
+  - name: mnist_nout20_nin16_tap2
+    set: [flexor.n_out=20, flexor.n_in=16, flexor.n_tap=2]
+  - name: mnist_nout20_nin16_rand
+    set: [flexor.n_out=20, flexor.n_in=16, flexor.n_tap=null]
+  - name: mnist_fp
+    set: [flexor=null]
