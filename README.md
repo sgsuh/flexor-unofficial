@@ -148,11 +148,25 @@ paper's own recipe for this figure).
 
 As in the paper, FleXOR training is clearly better than both alternatives.
 
+### Encrypted-weight clipping (Fig. 15b) — `sweeps/cifar10_clip_200ep.yaml`
+
+Same setting as Fig. 5. Clipping restricts encrypted weights to
+`(-2/S_tanh, +2/S_tanh)` after every step; the range halves whenever `S_tanh`
+doubles at an LR decay.
+
+| ResNet-32, 0.8 bit | Best | Final |
+|---|---|---|
+| no clipping (FleXOR above) | **88.72** | 88.32 |
+| clipping (`flexor.clip=2.0`) | 85.37 (epoch 146) | 76.50 |
+
+Clipping tracks the baseline until epoch 150, then degrades after each
+`S_tanh` doubling (train acc. 91.9% → 87.8%), consistent with the paper's
+finding that weight clipping is not effective with FleXOR.
+
 ### Not reproduced
 
-- ImageNet (no data), 500-epoch CIFAR-10 runs, Table 5 (N_out=10 sweep),
-  Fig. 6 (`S_tanh` sweep) and Fig. 15b (weight clipping; implemented as
-  `flexor.clip` but not run).
+- ImageNet (no data), 500-epoch CIFAR-10 runs, Table 5 (N_out=10 sweep) and
+  Fig. 6 (`S_tanh` sweep).
 
 ## Deviations from the paper
 
