@@ -1,0 +1,10 @@
+# Phase 4-6: XOR training scheme ablation (paper Fig. 5): FleXOR vs STE vs Analog XOR.
+# ResNet-32, N_out=10, N_in=8, q=1 (0.8 bit/weight), S_tanh=10, 200-epoch recipe.
+config: configs/cifar10_resnet32_200ep.yaml
+runs:
+  - name: c10_r32_200ep_nout10_nin8_flexor
+    set: [flexor.xor_mode=flexor]
+  - name: c10_r32_200ep_nout10_nin8_ste
+    set: [flexor.xor_mode=ste]
+  - name: c10_r32_200ep_nout10_nin8_analog
+    set: [flexor.xor_mode=analog]
