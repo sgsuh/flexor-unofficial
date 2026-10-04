@@ -93,16 +93,21 @@ def test_ste_mode_matches_flexor_forward_with_identity_input_gradient():
     assert torch.allclose(w.grad, expected)
 
 
-def test_analog_mode_is_tanh_product():
+def test_analog_mode_binary_forward_and_tanh_product_gradient():
     s = 5.0
     m = random_xor_matrix(10, 6, n_tap=3, seed=4)
     taps, parity = xor_taps(m)
-    w = torch.randn(5, 6) * 0.2
+    w = (torch.randn(5, 6) * 0.2).requires_grad_()
     y = xor_decode(w, taps, parity, s, mode="analog")
-    t = torch.tanh(w * s)
-    expected = torch.stack([t[:, m[r]].prod(dim=1) * parity[r] for r in range(10)], dim=1)
-    assert torch.allclose(y, expected)
-    assert (y.abs() < 1).all()
+    assert torch.equal(y, xor_decode(w.detach(), taps, parity, s))
+
+    g = torch.randn(5, 10)
+    (y * g).sum().backward()
+    wa = w.detach().clone().requires_grad_()
+    t = torch.tanh(wa * s)
+    analog = torch.stack([t[:, m[r]].prod(dim=1) * parity[r] for r in range(10)], dim=1)
+    (analog * g).sum().backward()
+    assert torch.allclose(w.grad, wa.grad)
 
 
 def test_unknown_mode_raises():

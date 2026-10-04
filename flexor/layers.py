@@ -25,7 +25,6 @@ class FleXORWeight(nn.Module):
     works when BatchNorm follows; without it (e.g. LeNet-5) activations blow up.
 
     ``xor_mode`` selects the XOR training scheme (see :func:`flexor.ops.xor_decode`).
-    "analog" only applies in training mode; eval mode always decodes binary codes.
     """
 
     def __init__(
@@ -61,10 +60,11 @@ class FleXORWeight(nn.Module):
         self.register_buffer("parity", torch.stack(parity))  # [q, n_out]
 
     def binary_codes(self) -> torch.Tensor:
-        """Decrypted binary codes in {-1, +1} (real for "analog" training), [q, *shape]."""
-        mode = "flexor" if self.xor_mode == "analog" and not self.training else self.xor_mode
+        """Decrypted binary codes in {-1, +1}, [q, *shape]."""
         planes = [
-            xor_decode(self.w_e[i], self.taps[i], self.parity[i], self.s_tanh, mode).reshape(-1)[: self.numel]
+            xor_decode(self.w_e[i], self.taps[i], self.parity[i], self.s_tanh, self.xor_mode).reshape(-1)[
+                : self.numel
+            ]
             for i in range(self.spec.q)
         ]
         return torch.stack(planes).view(self.spec.q, *self.shape)

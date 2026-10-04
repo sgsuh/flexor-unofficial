@@ -10,8 +10,9 @@ and the outputs are multiplied (Algorithm 1).
 Two alternative XOR training schemes from the paper's ablation (Fig. 5) are
 selectable with ``mode``:
     "ste":    sign forward, identity backward.
-    "analog": tanh(S x) forward and backward (Eq. 3/4), so XOR outputs are
-              real numbers in (-1, +1); use binary decoding for inference.
+    "analog": the XOR is modeled with Eq. (3)/(4) (product of tanh(S x)) and
+              its real-valued output is quantized through STE: forward is
+              the binary XOR output, backward is the gradient of Eq. (4).
 """
 
 import torch
@@ -71,15 +72,21 @@ def xor_decode(
         mode: XOR training scheme, one of :data:`XOR_MODES`.
 
     Returns:
-        Quantized bits in {-1, +1} ((-1, +1) for "analog"), [n_slices, n_out].
+        Quantized bits in {-1, +1}, [n_slices, n_out].
     """
+    if mode == "analog":
+        binary = xor_decode(w_e.detach(), taps, parity, s_tanh, "flexor")
+        analog = _gather_xor(torch.tanh(w_e * s_tanh), taps, parity)
+        return binary + (analog - analog.detach())  # STE on the analog XOR output
     if mode == "flexor":
         s = sign_tanh(w_e, s_tanh)
     elif mode == "ste":
         s = SignSTE.apply(w_e)
-    elif mode == "analog":
-        s = torch.tanh(w_e * s_tanh)
     else:
         raise ValueError(f"unknown XOR mode: {mode}")
+    return _gather_xor(s, taps, parity)
+
+
+def _gather_xor(s: torch.Tensor, taps: torch.Tensor, parity: torch.Tensor) -> torch.Tensor:
     s = F.pad(s, (0, 1), value=1.0)  # index n_in is the constant +1 padding input
     return s[:, taps].prod(dim=-1) * parity

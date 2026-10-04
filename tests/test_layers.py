@@ -79,15 +79,13 @@ def test_kaiming_alpha_init():
         FleXORWeight((4, 4), XORSpec(n_in=2, n_out=4), alpha_init="xavier")
 
 
-def test_analog_mode_is_real_in_training_and_binary_in_eval():
+def test_xor_modes_share_forward_codes():
     torch.manual_seed(0)
-    fw = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10), alpha_init=1.0, xor_mode="analog")
-    codes = fw.binary_codes()
-    assert (codes.abs() < 1).all()
-    fw.eval()
-    ref = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10), alpha_init=1.0)
-    ref.w_e.data.copy_(fw.w_e.data)
-    assert torch.equal(fw.binary_codes(), ref.binary_codes())
+    ref = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10))
+    for mode in ("ste", "analog"):
+        fw = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10), xor_mode=mode)
+        fw.w_e.data.copy_(ref.w_e.data)
+        assert torch.equal(fw.binary_codes(), ref.binary_codes())
     with pytest.raises(ValueError):
         FleXORWeight((8, 4), XORSpec(n_in=8, n_out=10), xor_mode="bogus")
 
