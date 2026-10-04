@@ -1,0 +1,29 @@
+# ResNet-32 on CIFAR-10, paper Table 1 recipe (Sec. 4, items 4-5):
+# LR and S_tanh warmup for 100 epochs, LR x0.5 at 350/400/450, 500 epochs.
+# S_tanh x2 at each LR decay is stated in the paper for its 200-epoch recipe;
+# whether it also applies here is unspecified (set s_tanh.factor=1.0 to disable).
+data:
+  name: cifar10
+  batch_size: 128
+model:
+  name: resnet32
+flexor:
+  n_in: 8
+  n_out: 20
+  q: 1
+  n_tap: 2
+  alpha_init: 0.2
+optim:
+  name: sgd
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 1.0e-5
+schedule:
+  epochs: 500
+  warmup_epochs: 100
+  milestones: [350, 400, 450]
+  gamma: 0.5
+s_tanh:
+  base: 10.0
+  warmup_start: 5.0
+  factor: 2.0

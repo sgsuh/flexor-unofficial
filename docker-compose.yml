@@ -1,0 +1,15 @@
+services:
+  flexor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: flexor-unofficial:latest
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    ipc: host
+    gpus: all
+    environment:
+      PYTHONPATH: /workspace
+    volumes:
+      - .:/workspace
+      - ${FLEXOR_DATA_DIR:-/home/sgsuh/data/torchvision}:/data/torchvision
+    working_dir: /workspace

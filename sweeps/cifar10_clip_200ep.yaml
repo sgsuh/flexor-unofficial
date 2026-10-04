@@ -1,0 +1,7 @@
+# Phase 4-6: encrypted-weight clipping ablation (paper Fig. 15b): clamp w_e to (-2/S_tanh, +2/S_tanh).
+# Same setting as sweeps/cifar10_xor_modes_200ep.yaml (whose "flexor" run is the no-clipping baseline):
+# ResNet-32, N_out=10, N_in=8, q=1 (0.8 bit/weight), S_tanh=10, 200-epoch recipe.
+config: configs/cifar10_resnet32_200ep.yaml
+runs:
+  - name: c10_r32_200ep_nout10_nin8_clip2
+    set: [flexor.clip=2.0]

@@ -1,0 +1,7 @@
+# Phase 4-4: ResNet-32 with q=2 bit planes (paper Table 6), N_out=20, N_in=20 -> 2.0 bit/weight,
+# trained with the same 200-epoch recipe as sweeps/cifar10_200ep.yaml for comparison.
+config: configs/cifar10_resnet32_200ep.yaml
+set: [flexor.n_out=20, flexor.q=2]
+runs:
+  - name: c10_r32_200ep_q2_nout20_nin20
+    set: [flexor.n_in=20]

@@ -1,0 +1,6 @@
+# Phase 4-5: ResNet-20 layer-group mixed precision (paper Table 2, N_in = 19/16/7, N_out = 20),
+# trained with the same 200-epoch recipe as sweeps/cifar10_200ep.yaml for comparison.
+config: configs/cifar10_resnet20_mixed.yaml
+set: [schedule.epochs=200, schedule.warmup_epochs=0, "schedule.milestones=[150, 175]"]
+runs:
+  - name: c10_r20_200ep_mixed_19_16_7

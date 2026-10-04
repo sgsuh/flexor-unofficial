@@ -1,0 +1,26 @@
+# Phase 4-2 (quick pass): ResNet-20/32 on CIFAR-10, q=1, N_out=20, N_in in {8,12,16,20}
+# (0.4-1.0 bit) plus FP baselines, using the 200-epoch recipe (paper Fig. 5/6) instead of
+# Table 1's 500-epoch recipe.
+config: configs/cifar10_resnet32_200ep.yaml
+set: [flexor.n_out=20]
+runs:
+  - name: c10_r32_200ep_nout20_nin8
+    set: [model.name=resnet32, flexor.n_in=8]
+  - name: c10_r32_200ep_nout20_nin12
+    set: [model.name=resnet32, flexor.n_in=12]
+  - name: c10_r32_200ep_nout20_nin16
+    set: [model.name=resnet32, flexor.n_in=16]
+  - name: c10_r32_200ep_nout20_nin20
+    set: [model.name=resnet32, flexor.n_in=20]
+  - name: c10_r32_200ep_fp
+    set: [model.name=resnet32, flexor=null]
+  - name: c10_r20_200ep_nout20_nin8
+    set: [model.name=resnet20, flexor.n_in=8]
+  - name: c10_r20_200ep_nout20_nin12
+    set: [model.name=resnet20, flexor.n_in=12]
+  - name: c10_r20_200ep_nout20_nin16
+    set: [model.name=resnet20, flexor.n_in=16]
+  - name: c10_r20_200ep_nout20_nin20
+    set: [model.name=resnet20, flexor.n_in=20]
+  - name: c10_r20_200ep_fp
+    set: [model.name=resnet20, flexor=null]
