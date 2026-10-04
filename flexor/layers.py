@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 
-from .ops import xor_decode
+from .ops import XOR_MODES, xor_decode
 from .xor_net import XORSpec, xor_taps
 
 
@@ -23,6 +23,9 @@ class FleXORWeight(nn.Module):
     ``alpha_init`` is either a constant (paper: 0.2) or ``"kaiming"``, which
     uses sqrt(2 / fan_in) so the layer output keeps unit scale. The constant
     works when BatchNorm follows; without it (e.g. LeNet-5) activations blow up.
+
+    ``xor_mode`` selects the XOR training scheme (see :func:`flexor.ops.xor_decode`).
+    "analog" only applies in training mode; eval mode always decodes binary codes.
     """
 
     def __init__(
@@ -32,11 +35,15 @@ class FleXORWeight(nn.Module):
         init_std: float = 1e-3,
         alpha_init: Union[float, str] = 0.2,
         s_tanh: float = 10.0,
+        xor_mode: str = "flexor",
     ):
         super().__init__()
+        if xor_mode not in XOR_MODES:
+            raise ValueError(f"unknown XOR mode: {xor_mode}")
         self.shape = tuple(shape)
         self.spec = spec
         self.s_tanh = s_tanh
+        self.xor_mode = xor_mode
         self.numel = math.prod(self.shape)
         self.n_slices = math.ceil(self.numel / spec.n_out)
 
@@ -54,9 +61,10 @@ class FleXORWeight(nn.Module):
         self.register_buffer("parity", torch.stack(parity))  # [q, n_out]
 
     def binary_codes(self) -> torch.Tensor:
-        """Decrypted binary codes in {-1, +1}, [q, *shape]."""
+        """Decrypted binary codes in {-1, +1} (real for "analog" training), [q, *shape]."""
+        mode = "flexor" if self.xor_mode == "analog" and not self.training else self.xor_mode
         planes = [
-            xor_decode(self.w_e[i], self.taps[i], self.parity[i], self.s_tanh).reshape(-1)[: self.numel]
+            xor_decode(self.w_e[i], self.taps[i], self.parity[i], self.s_tanh, mode).reshape(-1)[: self.numel]
             for i in range(self.spec.q)
         ]
         return torch.stack(planes).view(self.spec.q, *self.shape)
@@ -65,11 +73,17 @@ class FleXORWeight(nn.Module):
         alpha = self.alpha.view(self.spec.q, self.shape[0], *([1] * (len(self.shape) - 1)))
         return (alpha * self.binary_codes()).sum(dim=0)
 
+    @torch.no_grad()
+    def clip_encrypted(self, bound: float) -> None:
+        """Clamp encrypted weights to (-bound / S_tanh, +bound / S_tanh) (paper Fig. 15b)."""
+        limit = bound / self.s_tanh
+        self.w_e.clamp_(-limit, limit)
+
     def extra_repr(self) -> str:
         s = self.spec
         return (
             f"shape={self.shape}, q={s.q}, n_in={s.n_in}, n_out={s.n_out}, n_tap={s.n_tap}, "
-            f"bits/weight={s.bits_per_weight:.3f}"
+            f"bits/weight={s.bits_per_weight:.3f}, xor_mode={self.xor_mode}"
         )
 
 

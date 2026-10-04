@@ -93,7 +93,10 @@ def verify_export(model: nn.Module, exported: dict) -> float:
     """Max abs difference between training-path weights and XOR-decrypted ones."""
     max_diff = 0.0
     for name, fw in _flexor_named(model).items():
+        was_training = fw.training
+        fw.eval()  # "analog" XOR mode decodes binary codes only in eval mode
         ref = fw().cpu().float()
+        fw.train(was_training)
         rec = reconstruct_weight(exported["layers"][name])
         max_diff = max(max_diff, (ref - rec).abs().max().item())
     return max_diff

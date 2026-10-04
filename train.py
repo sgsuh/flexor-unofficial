@@ -36,9 +36,11 @@ DEFAULTS = {
              "num_workers": 4, "augment": True},
     "model": {"name": "resnet32"},
     # Set to null for a full-precision baseline. ``stages`` (ResNet only) is a
-    # list of per-stage overrides merged onto the base spec.
+    # list of per-stage overrides merged onto the base spec. ``xor_mode`` is
+    # "flexor" | "ste" | "analog" (Fig. 5); ``clip`` (e.g. 2.0) clamps encrypted
+    # weights to +-clip/S_tanh after every step (Fig. 15b), null disables it.
     "flexor": {"n_in": 8, "n_out": 20, "q": 1, "n_tap": 2, "seed": 0, "stages": None,
-               "init_std": 1.0e-3, "alpha_init": 0.2},
+               "init_std": 1.0e-3, "alpha_init": 0.2, "xor_mode": "flexor", "clip": None},
     "optim": {"name": "sgd", "lr": 0.1, "momentum": 0.9, "weight_decay": 1.0e-5},
     "schedule": {"epochs": 200, "warmup_epochs": 0, "milestones": [150, 175], "gamma": 0.5},
     # S_tanh warmup shares ``schedule.warmup_epochs``; ``factor`` is applied at
@@ -104,7 +106,7 @@ def build_from_config(cfg: dict) -> nn.Module:
     kwargs = {"spec": build_spec(fcfg)}
     if fcfg:
         kwargs["flexor_kwargs"] = {"init_std": fcfg["init_std"], "alpha_init": fcfg["alpha_init"],
-                                   "s_tanh": cfg["s_tanh"]["base"]}
+                                   "s_tanh": cfg["s_tanh"]["base"], "xor_mode": fcfg["xor_mode"]}
     return build_model(cfg["model"]["name"], **kwargs)
 
 
@@ -172,6 +174,7 @@ def train(cfg: dict, resume: bool = False) -> dict:
                             scfg["milestones"], cfg["s_tanh"]["factor"])
     base_lr = cfg["optim"]["lr"]
     has_flexor = any(True for _ in flexor_weights(model))
+    clip = cfg["flexor"]["clip"] if has_flexor else None
 
     start_epoch, best_acc = 0, 0.0
     if resume and ckpt_path.exists():
@@ -211,6 +214,9 @@ def train(cfg: dict, resume: bool = False) -> dict:
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
+            if clip:
+                for fw in flexor_weights(model):
+                    fw.clip_encrypted(clip)
 
             loss_sum += loss.item() * y.numel()
             correct += (logits.argmax(1) == y).sum().item()

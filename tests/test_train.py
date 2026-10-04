@@ -60,3 +60,12 @@ def test_smoke_train_and_resume(tmp_path):
     train.train(cfg, resume=True)
     assert len((run / "metrics.csv").read_text().strip().splitlines()) == 4
     assert json.loads((run / "summary.json").read_text())["name"] == "smoke"
+
+
+@pytest.mark.parametrize("extra", [["flexor.xor_mode=analog"], ["flexor.xor_mode=ste", "flexor.clip=2.0"]])
+def test_smoke_train_xor_modes_and_clip(tmp_path, extra):
+    overrides = [f"out_dir={tmp_path}", "name=mode", "debug.limit_batches=3", "schedule.epochs=1",
+                 "data.num_workers=0"] + extra
+    cfg = train.load_config(os.path.join(CONFIGS, "mnist_lenet5.yaml"), overrides)
+    summary = train.train(cfg)
+    assert summary["export_max_diff"] < 1e-5

@@ -77,3 +77,26 @@ def test_kaiming_alpha_init():
     assert torch.allclose(fw.alpha, torch.full_like(fw.alpha, (2.0 / 72) ** 0.5))
     with pytest.raises(ValueError):
         FleXORWeight((4, 4), XORSpec(n_in=2, n_out=4), alpha_init="xavier")
+
+
+def test_analog_mode_is_real_in_training_and_binary_in_eval():
+    torch.manual_seed(0)
+    fw = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10), alpha_init=1.0, xor_mode="analog")
+    codes = fw.binary_codes()
+    assert (codes.abs() < 1).all()
+    fw.eval()
+    ref = FleXORWeight((8, 4, 3, 3), XORSpec(n_in=8, n_out=10), alpha_init=1.0)
+    ref.w_e.data.copy_(fw.w_e.data)
+    assert torch.equal(fw.binary_codes(), ref.binary_codes())
+    with pytest.raises(ValueError):
+        FleXORWeight((8, 4), XORSpec(n_in=8, n_out=10), xor_mode="bogus")
+
+
+def test_clip_encrypted_uses_current_s_tanh():
+    fw = FleXORWeight((8, 4), XORSpec(n_in=8, n_out=10), s_tanh=10.0)
+    fw.w_e.data.normal_()
+    fw.clip_encrypted(2.0)
+    assert fw.w_e.abs().max() <= 0.2 + 1e-7
+    fw.s_tanh = 20.0
+    fw.clip_encrypted(2.0)
+    assert fw.w_e.abs().max() <= 0.1 + 1e-7
